@@ -14,9 +14,9 @@ function ninja_forms_register_field_email_validate(){
 		'edit_function' => 'ninja_forms_email_validate_edit',
 		'edit_options' => array(
 			array(
-				'type' => 'checkbox',
+				'type' => 'hidden',
 				'name' => 'email',
-				'label' => __( 'Is this an email address?', 'ninja-forms' ),
+				'default' => 1,
 			),
 			array(
 				'type' => 'checkbox',
@@ -34,11 +34,6 @@ function ninja_forms_register_field_email_validate(){
 				'label' => __( 'Use this email address as the Reply-To address?', 'ninja-forms' ),
 			),
 			array(
-				'type' => 'checkbox',
-				'name' => 'from_name',
-				'label' => __( 'Use this as the "From" and Reply-To email name for Administrative recipients of this form?', 'ninja-forms' ),
-			),
-			array(
 				'type' => 'hidden',
 				'name' => 'user_email',
 			),
@@ -52,7 +47,7 @@ function ninja_forms_register_field_email_validate(){
 		'save_function' => '',
 		'group' => 'standard_fields',
 		'edit_label' => true,
-		'edit_label_pos' => true,
+		'edit_label_pos' => false,
 		'edit_req' => true,
 		'edit_custom_class' => true,
 		'edit_help' => true,
@@ -85,6 +80,12 @@ function ninja_forms_email_validate_edit( $field_id, $data ){
 		$default_value = '';
 	}
 
+	if( isset( $data['email_validate_error'] ) ){
+		$email_validate_error = $data['email_validate_error'];
+	}else{
+		$email_validate_error = __( 'E-Mail Addresses do not match', 'ninja-forms' );
+	}
+
 	?>
 	<div class="description description-thin">
 		<span class="field-option">
@@ -98,6 +99,7 @@ function ninja_forms_email_validate_edit( $field_id, $data ){
 			</select>
 		</span>
 	</div>
+
 	<div class="description description-thin">
 
 		<label for="" id="default_value_label_<?php echo $field_id;?>" style="<?php if($custom == 'no'){ echo 'display:none;';}?>">
@@ -108,14 +110,28 @@ function ninja_forms_email_validate_edit( $field_id, $data ){
 		</label>
 
 	</div>
-
+	
+	<div class="description description-wide">
+		<span class="field-option">
+		<label for="">
+			<?php _e( 'Email Validation Error Message' , 'ninja-forms'); ?>
+		</label><br />
+			<input type="text" id="email_validate_error_<?php echo $field_id;?>" name="ninja_forms_field_<?php echo $field_id;?>[email_validate_error]" value="<?php echo $email_validate_error;?>" class="widefat" />
+		</span>
+	</div>
 
 	<?php
 }
 
 function ninja_forms_field_email_validate_display( $field_id, $data ){
-	global $current_user;
+	global $current_user, $ninja_forms_processing;
 	$field_class = ninja_forms_get_field_class( $field_id );
+	if ( isset ( $ninja_forms_processing ) ) {
+		$validate_email = $ninja_forms_processing->get_extra_value( '_validate_email' );
+	} else {
+		$validate_email = '';
+	}
+	
 
 	if ( isset( $data['email'] ) ) {
 		$field_class .= ' email';
@@ -139,52 +155,9 @@ function ninja_forms_field_email_validate_display( $field_id, $data ){
 		$label = '';
 	}
 
-	if( isset( $data['mask'] ) ){
-		$mask = $data['mask'];
-	}else{
-		$mask = '';
-	}	
-
-	if( isset( $data['input_limit'] ) ){
-		$input_limit = $data['input_limit'];
-	}else{
-		$input_limit = '';
-	}
-
-	if( isset( $data['input_limit_type'] ) ){
-		$input_limit_type = $data['input_limit_type'];
-	}else{
-		$input_limit_type = '';
-	}
-
-	if( isset( $data['input_limit_msg'] ) ){
-		$input_limit_msg = $data['input_limit_msg'];
-	}else{
-		$input_limit_msg = '';
-	}
-
-	switch( $mask ){
-		case '':
-			$mask_class = '';
-			break;
-		case 'date':
-			$mask_class = 'ninja-forms-date';
-			break;
-		case 'currency':
-			$mask_class =  'ninja-forms-currency';
-			break;
-		default:
-			$mask_class = 'ninja-forms-mask';
-			break;
-	}
-
-	if( isset( $data['datepicker'] ) AND $data['datepicker'] == 1 ){
-		$mask_class = 'ninja-forms-datepicker';
-	}
-
 	?>
-	<input id="ninja_forms_field_<?php echo $field_id;?>" data-mask="<?php echo $mask;?>" data-input-limit="<?php echo $input_limit;?>" data-input-limit-type="<?php echo $input_limit_type;?>" data-input-limit-msg="<?php echo $input_limit_msg;?>" name="ninja_forms_field_<?php echo $field_id;?>" type="text" class="<?php echo $field_class;?> <?php echo $mask_class;?>" value="<?php echo $default_value;?>" rel="<?php echo $field_id;?>" />
-	<input id="ninja_forms_field_<?php echo $field_id;?>" data-mask="<?php echo $mask;?>" data-input-limit="<?php echo $input_limit;?>" data-input-limit-type="<?php echo $input_limit_type;?>" data-input-limit-msg="<?php echo $input_limit_msg;?>" name="_validate_email" type="text" class="<?php echo $field_class;?> <?php echo $mask_class;?>" value="<?php echo $default_value;?>" rel="<?php echo $field_id;?>" />
+	<input id="ninja_forms_field_<?php echo $field_id;?>" data-mask="<?php echo $mask;?>" data-input-limit="<?php echo $input_limit;?>" data-input-limit-type="<?php echo $input_limit_type;?>" data-input-limit-msg="<?php echo $input_limit_msg;?>" name="ninja_forms_field_<?php echo $field_id;?>" type="text" class="<?php echo $field_class;?> <?php echo $mask_class;?>" placeholder="<?php _e( 'Enter E-mail', 'ninja-forms' );?>" value="<?php echo $default_value;?>" rel="<?php echo $field_id;?>" />
+	<input id="ninja_forms_field_<?php echo $field_id;?>" data-mask="<?php echo $mask;?>" data-input-limit="<?php echo $input_limit;?>" data-input-limit-type="<?php echo $input_limit_type;?>" data-input-limit-msg="<?php echo $input_limit_msg;?>" name="_validate_email" type="text" class="<?php echo $field_class;?> <?php echo $mask_class;?>" placeholder="<?php _e( 'Re-Enter E-mail', 'ninja-forms' );?>" value="<?php echo $validate_email;?>" rel="<?php echo $field_id;?>" />
 	<?php
 
 }
@@ -193,7 +166,7 @@ function ninja_forms_field_email_validate_pre_process( $field_id, $user_value ){
 	global $ninja_forms_processing;
 	$plugin_settings = nf_get_settings();
 	$validate_email = $ninja_forms_processing->get_extra_value( '_validate_email' );
-	$nomatch_email = __( 'E-Mail Addresses do not match', 'ninja-forms' );
+	
 	if( isset( $plugin_settings['invalid_email'] ) ){
 		$invalid_email = __( $plugin_settings['invalid_email'], 'ninja-forms' );
 	}else{
@@ -201,6 +174,9 @@ function ninja_forms_field_email_validate_pre_process( $field_id, $user_value ){
 	}
 	$field_row = $ninja_forms_processing->get_field_settings( $field_id );
 	$data = $field_row['data'];
+	if( isset( $data['email_validate_error'] ) ) {
+		$email_validate_error = $data['email_validate_error'];
+	} 
 	if( isset( $data['email'] ) AND $data['email'] == 1 AND $user_value != '' ){
 		if ( ! is_email( $user_value ) ) {
     		$ninja_forms_processing->add_error( 'email-'.$field_id, $invalid_email, $field_id );
@@ -209,7 +185,7 @@ function ninja_forms_field_email_validate_pre_process( $field_id, $user_value ){
 
 	if( isset( $data['email'] ) AND $data['email'] == 1 AND $user_value != '' ){
 		if ( $user_value != $validate_email ) {
-    		$ninja_forms_processing->add_error( 'email-'.$field_id, $nomatch_email, $field_id );
+    		$ninja_forms_processing->add_error( 'email-'.$field_id, $email_validate_error, $field_id );
 		}
 	}
 
@@ -218,14 +194,4 @@ function ninja_forms_field_email_validate_pre_process( $field_id, $user_value ){
 		$ninja_forms_processing->update_form_setting( 'admin_email_replyto', $user_value );
 	}
 
-	if( isset( $data['from_name'] ) AND $data['from_name'] == 1 ){
-		$user_value = $ninja_forms_processing->get_field_value( $field_id );
-		if( $ninja_forms_processing->get_form_setting( 'admin_email_name' ) ){
-			$admin_email_name = $ninja_forms_processing->get_form_setting( 'admin_email_name' );
-			$admin_email_name .= " ".$user_value;
-		}else{
-			$admin_email_name = $user_value;
-		}
-		$ninja_forms_processing->update_form_setting( 'admin_email_name', $admin_email_name );
-	}
 }
